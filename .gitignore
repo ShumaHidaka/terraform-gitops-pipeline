@@ -1,0 +1,14 @@
+# Terraform のローカルキャッシュ・バイナリ
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# クラッシュログ等
+crash.log
+crash.*.log
+
+# CLI の設定ファイル
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

@@ -1,0 +1,103 @@
+name: "Terraform GitOps Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write   # OIDC認証のために必須
+  contents: read    # リポジトリのチェックアウトに必要
+  pull-requests: write # PRへのコメント投稿に必要
+
+jobs:
+  terraform:
+    name: "Terraform Pipeline"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. AWS OIDC 認証（長期キーなしで一時代理ログイン）
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      # 3. Terraform CLI のセットアップ
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      # 4. コード整形チェック (terraform fmt)
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      # 5. 初期化 (terraform init)
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      # 6. 構文チェック (terraform validate)
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      # 7. 実行計画の確認 (terraform plan) ※ PR作成時のみ実行
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      # 8. PR コメントへ plan 結果を自動投稿 ※ PR作成時のみ実行
+      - name: Update Pull Request Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan Output</summary>
+
+            \`\`\`hcl
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      # 9. Plan エラー時のジョブ停止判定
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      # 10. インフラ反映 (terraform apply) ※ Mainブランチマージ時のみ実行
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false

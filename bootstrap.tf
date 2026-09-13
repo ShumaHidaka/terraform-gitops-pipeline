@@ -44,7 +44,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1", "1c3dd59f39d20211e480f255756393a24d2f8d47"]
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1", "1c58a218683b7f75e0c8b8423f06d18253373400"]
 }
 
 # 4. GitHub Actions用 IAMロール

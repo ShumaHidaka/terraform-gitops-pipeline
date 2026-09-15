@@ -65,7 +65,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:ShumaHidaka/terraform-gitops-pipeline:*"
+            "token.actions.githubusercontent.com:sub" = "repo:ShumaHidaka*/terraform-gitops-pipeline*:*"
           }
         }
       }
@@ -84,5 +84,3 @@ output "role_arn" {
   value       = aws_iam_role.github_actions.arn
   description = "GitHub Actionsに設定するIAM RoleのARN"
 }
-
-# テストコメント

@@ -84,5 +84,3 @@ output "role_arn" {
   value       = aws_iam_role.github_actions.arn
   description = "GitHub Actionsに設定するIAM RoleのARN"
 }
-
-# テストコメント

@@ -63,7 +63,7 @@ jobs:
       - name: Deploy Static Files to S3
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          aws s3 sync . s3://shuma-static-site-20260909 \
+          aws s3 sync . s3://shuma-static-site-20261002 \
             --exclude "*" \
             --include "index.html" \
             --delete
@@ -72,5 +72,5 @@ jobs:
       - name: Invalidate CloudFront Cache
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[0].DomainName=='shuma-static-site-20260909.s3.ap-northeast-1.amazonaws.com'].Id" --output text)
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[0].DomainName=='shuma-static-site-20261002.s3.ap-northeast-1.amazonaws.com'].Id" --output text)
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
